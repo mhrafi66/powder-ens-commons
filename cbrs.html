@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CBRS Dataset | POWDER-ENS Commons</title>
+  <style>
+    body { max-width: 900px; margin: auto; font-family: sans-serif; line-height: 1.6; padding: 20px; }
+    h1, h2, h3 { color: #2c3e50; }
+    pre { background: #f4f4f4; padding: 10px; overflow-x: auto; border-left: 4px solid #007acc; }
+    code { background: #f9f9f9; padding: 2px 4px; font-family: monospace; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background-color: #f2f2f2; }
+    details summary { cursor: pointer; font-weight: bold; margin-top: 10px; }
+    details { margin-bottom: 15px; }
+    hr { margin: 30px 0; }
+    a { color: #007acc; }
+  </style>
+</head>
+<body>
+
+<h1>📡 CBRS Dataset</h1>
+<p><strong>Salt Lake City 3533.89–3534.11 MHz Multi-Transmitter Measurement Campaign</strong></p>
+
+<hr>
+
+<h2>📄 Description</h2>
+<p>For full experimental details, analysis, and visualizations, please see the presentation:  
+<a href="https://docs.google.com/presentation/d/1uisWySmkMuHB8V5RjwVS0rMU_LtY-mD7X9nGiY8x1O0/edit?usp=sharing" target="_blank">[Google Slides]</a></p>
+
+<hr>
+
+<h2>📦 Installation and Loading</h2>
+
+<p>Install the library:</p>
+<pre><code>pip install powder_ens_commons</code></pre>
+
+<p>Load the CBRS dataset:</p>
+<pre><code>from powder_ens_commons.datacommons import load_dataset
+
+dataset, receivers, building_map, dsm_map = load_dataset("cbrs", version="full")
+</code></pre>
+
+<hr>
+
+<h2>▶️ Example: Parsing One Timestamp</h2>
+
+<pre><code>timestamp = "2023-06-27T11:11:26"
+entry = dataset[timestamp]
+
+print("Metadata:", entry["metadata"])
+for record in entry["pow_rx_tx"]:
+    rss, rx_lat, rx_lon, tx_lat, tx_lon = record
+    print(f"RSS={rss:.2f} dBm | RX=({rx_lat}, {rx_lon}) | TX=({tx_lat}, {tx_lon})")
+</code></pre>
+
+<pre><code>Output:
+Metadata: ['walking']
+RSS=-45.54 dBm | RX=(40.7698164, -111.84501634) | TX=(40.76702, -111.83807)
+RSS=-80.69 dBm | RX=(40.7698164, -111.84501634) | TX=(40.76749, -111.83607)
+...</code></pre>
+
+<hr>
+
+<h2>🗺️ Maps</h2>
+<p>Same maps as in FRS are included:</p>
+<ul>
+  <li><code>corrected_buildings.tif</code></li>
+  <li><code>corrected_dsm.tif</code></li>
+</ul>
+
+<pre><code>import rasterio
+import matplotlib.pyplot as plt
+
+with rasterio.open(building_map) as src:
+    data = src.read(1)
+
+plt.imshow(data, cmap='gray')
+plt.title("Building Map with CBRS Measurements")
+plt.colorbar(label="Height (m)")
+plt.show()
+</code></pre>
+
+<hr>
+
+<h2>🧾 JSON File Format</h2>
+
+<p>Each top-level key is a timestamp (accurate to the second).</p>
+<p>Each timestamp has two keys: <code>"pow_rx_tx"</code> and <code>"metadata"</code>.</p>
+
+<ul>
+  <li><strong>pow_rx_tx</strong>: 5-tuple records
+    <ol>
+      <li>RSS (dBm)</li>
+      <li>Receiver Latitude</li>
+      <li>Receiver Longitude</li>
+      <li>Transmitter Latitude</li>
+      <li>Transmitter Longitude</li>
+    </ol>
+  </li>
+  <li><strong>metadata</strong>: List of movement types (e.g., "walking")</li>
+</ul>
+
+<h3>Example Entry</h3>
+<pre><code>"2023-06-27T11:11:26": {
+  "pow_rx_tx": [
+    [-45.5403, 40.7698, -111.8450, 40.76702, -111.83807],
+    [-80.6958, 40.7698, -111.8450, 40.76749, -111.83607]
+  ],
+  "metadata": ["walking"]
+}
+</code></pre>
+
+<hr>
+
+<h2>📊 Entry Interpretation</h2>
+
+<p>Each record in <code>pow_rx_tx</code> is interpreted as:</p>
+<pre><code>[
+  RSS_value,
+  RX_latitude,
+  RX_longitude,
+  TX_latitude,
+  TX_longitude
+]</code></pre>
+
+<ul>
+  <li><strong>RSS_value:</strong> Received signal strength in dBm.</li>
+  <li><strong>RX_lat/lon:</strong> Fixed base station (receiver) location.</li>
+  <li><strong>TX_lat/lon:</strong> Mobile device (transmitter) location at that timestamp.</li>
+</ul>
+
+<hr>
+
+<h2>⚡ Key Difference from FRS Dataset</h2>
+
+<ul>
+  <li><strong>FRS:</strong> TX is fixed, RX nodes collect RSS.</li>
+  <li><strong>CBRS:</strong> TX is moving (handheld), RX are fixed base stations.</li>
+</ul>
+
+<p>This setup enables localizing the TX using multiple known RX measurements.</p>
+
+<hr>
+
+<h2>📁 Dataset Structure</h2>
+
+<p>All data is contained in a single JSON file indexed by timestamps.</p>
+
+<p>Each entry → <code>{ "pow_rx_tx": [...], "metadata": [...] }</code></p>
+
+<hr>
+
+<h2>📚 Citation</h2>
+
+<p>If you use this dataset, please cite:</p>
+
+<pre><code>@misc{tadikmeas2024,
+    author       = "Tadik, S. and Singh, A. and Mitchell, F. and Hu, Y. and Yao, X. and Webb, K. and Sarbhai, A. and Maas, D. and Orange, A. and Van der Merwe, J. and Patwari, N. and Ji, M. and Kasera, Sneha K. and Bhaskara, A. and Durgin, Gregory D.",
+    title        = "Salt Lake City 3534 MHz Multi-Transmitter Measurement Campaign",
+    year         = "2024",
+    month        = "March",
+    howpublished = {\url{https://github.com/serhatadik/slc-3534MHz-meas}}
+}
+</code></pre>
+
+<hr>
+
+<p><a href="index.html">← Back to main page</a></p>
+
+</body>
+</html>
