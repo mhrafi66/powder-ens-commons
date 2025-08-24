@@ -34,7 +34,7 @@
 <pre><code>from powder_ens_commons.datacommons import load_dataset
 
 # Load the 'single_tx' version of FRS dataset
-dataset, receivers, building_map, dsm_map = load_dataset("frs", version="single_tx")
+dataset, receivers, building_map, dsm_map = load_dataset("frs", version="full")
 </code></pre>
 
 <hr>
@@ -52,6 +52,18 @@ dataset, receivers, building_map, dsm_map = load_dataset("frs", version="single_
     </ul>
   </li>
 </ul>
+
+<hr>
+
+<h2>📦 Splitting the dataset</h2>
+
+<p>You can split the loaded dataset as follows:</p>
+
+<pre><code>from powder_ens_commons.datacommons.utils import split_train_test_json
+
+# Split the dataset
+train_data, test_data = split_train_test_json(dataset, test_size=0.2)
+</code></pre>
 
 <hr>
 
