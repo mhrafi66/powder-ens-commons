@@ -43,6 +43,18 @@ dataset, receivers, building_map, dsm_map = load_dataset("cbrs", version="full")
 
 <hr>
 
+<h2>📦 Splitting the dataset</h2>
+
+<p>You can split the loaded dataset as follows:</p>
+
+<pre><code>from powder_ens_commons.datacommons.utils import split_train_test_json
+
+# Split the dataset
+train_data, test_data = split_train_test_json(dataset, test_size=0.2)
+</code></pre>
+
+<hr>
+
 <h2>▶️ Example: Parsing One Timestamp</h2>
 
 <pre><code>timestamp = "2023-06-27T11:11:26"
