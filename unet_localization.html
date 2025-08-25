@@ -1,13 +1,200 @@
 <!-- public/unet_localization.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>UNet Localization | POWDER-ENS Commons</title>
+  <meta charset="UTF-8">
+  <title>UNet-BSpline Localization Model</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9f9f9;
+      color: #2c3e50;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.7;
+    }
+    h1, h2, h3 {
+      color: #007acc;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      overflow-x: auto;
+      border-left: 4px solid #007acc;
+    }
+    code {
+      background: #f1f1f1;
+      padding: 2px 4px;
+      font-family: Consolas, monospace;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #eef3f7;
+    }
+    a {
+      color: #007acc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    hr {
+      margin: 40px 0;
+    }
+  </style>
 </head>
 <body>
-  <h1>UNet-Localization Model</h1>
-  <p>This page documents the UNet-based model used for single and dual transmitter localization from RSS images. More details coming soon.</p>
 
-  <p><a href="index.html">← Back to main page</a></p>
+<h1>📡 Localization UNet with B-Spline Augmentation</h1>
+<p>A physics-aware UNet-based localization model trained with B-spline augmented synthetic data, suitable for wireless signal-based transmitter localization tasks.</p>
+
+<hr>
+
+<h2>🧠 UNet-BSpline Localization Model Commons</h2>
+<p><strong>Repository:</strong> <a href="https://pypi.org/project/powder-ens-commons/">powder_ens_commons</a><br>
+<strong>Model:</strong> <code>localization_unet_bspline</code><br>
+<strong>Task:</strong> Wireless Localization from RSS Images<br>
+<strong>Framework:</strong> PyTorch</p>
+
+<hr>
+
+<h2>🚀 Overview</h2>
+<p>This model implements a <strong>UNet-based deep learning model for transmitter localization</strong>, enhanced by a <strong>B-spline-based calibration</strong>. It is designed for wireless propagation modeling tasks using RSS maps generated from field-deployed sensor data.</p>
+
+<p>The module is part of the <a href="https://pypi.org/project/powder-ens-commons/">powder_ens_commons</a> package, built to support wireless data and model sharing across experiments on the <a href="https://powderwireless.net/">POWDER platform</a>.</p>
+
+<hr>
+
+<h2>🔧 How to Use</h2>
+
+<h3>Installation</h3>
+<pre><code>pip install powder_ens_commons</code></pre>
+
+<h3>Example: Loading the Model in Google Colab</h3>
+<pre><code>from powder_ens_commons.modelcommons.localization_unet_bspline import load_model_and_fit_dataset
+
+# Load JSON dataset (ensure structure below)
+import json
+with open('my_dataset.json', 'r') as f:
+    dataset = json.load(f)
+
+# Load Model and Fine Tune
+model, train_loss_arr, test_errors = load_model_and_fit_dataset(
+    train_data=dataset,
+    receivers_list=receivers,
+    bmap=building_map,
+    dsm=dsm_map,
+    one_tx=False,
+    device='cuda'  # Use 'cpu' if running without GPU
+)</code></pre>
+
+<hr>
+
+<h2>📁 Dataset Format (Required for Current Version)</h2>
+<p>Currently, the model only supports datasets in <code>.json</code> format with the following structure:</p>
+<pre><code>"2022-04-25 14:11:02": {
+  "rx_data": [
+    [RSS, lat, lon, sensor_id],
+    ...
+  ],
+  "tx_coords": [
+    [lat, lon],
+    ...
+  ],
+  "metadata": [
+    {"power": ..., "transport": ..., "radio": ...},
+    ...
+  ]
+}</code></pre>
+
+<p>Example <code>rx_data</code> entry:</p>
+<pre><code>[
+  -75.14, 40.76, -111.85, "bus-4603"
+]</code></pre>
+
+<p>📌 <strong>Note:</strong> Future releases will support <code>.csv</code> and other formats.</p>
+
+<hr>
+
+<h2>🧪 Output</h2>
+<p>The <code>load_model_and_fit_dataset</code> function returns:</p>
+<ul>
+  <li>The trained model</li>
+  <li>Training loss array</li>
+  <li>Final test error dictionary</li>
+</ul>
+
+<hr>
+
+<h2>📐 Model Architecture</h2>
+
+<h3>🧠 Input Representation (3-Channel Image)</h3>
+<ol>
+  <li><strong>RSS Image:</strong> Grayscale image showing RSS intensity per receiver location.</li>
+  <li><strong>B-Spline Calibrated RSS:</strong> Calibrated grayscale image using shallow B-spline network.</li>
+  <li><strong>Terrain Feature Map:</strong> Tensor extracted from terrain/satellite image.</li>
+</ol>
+
+<h3>🧱 U-Net Backbone</h3>
+<ul>
+  <li><strong>Encoder:</strong> Convolution + ReLU + max-pooling → doubles channels at each step</li>
+  <li><strong>Decoder:</strong> Up-convolution + skip-connections → restores spatial resolution</li>
+  <li><strong>Residual connections:</strong> Used to maintain fine-grain detail</li>
+</ul>
+
+<h3>🎯 Output</h3>
+<p>A single-channel heatmap image <code>(1, H, W)</code> representing transmitter likelihood over space.</p>
+
+<h3>⚙️ Loss</h3>
+<p>Uses <strong>approximate Earth Mover’s Distance (EMD)</strong> loss to preserve spatial coherence.</p>
+
+<hr>
+
+<h2>🔍 Observations</h2>
+<ul>
+  <li>Image-to-image regression worked better than coordinate prediction.</li>
+  <li>Model learned dense spatial patterns despite no explicit spatial bias in loss.</li>
+</ul>
+
+<hr>
+
+<h2>📊 Summary</h2>
+<table>
+  <tr><th>Component</th><th>Description</th></tr>
+  <tr><td>Input Channels</td><td>RSS, Calibrated RSS, Terrain tensor</td></tr>
+  <tr><td>Architecture</td><td>U-Net with skip connections</td></tr>
+  <tr><td>Output</td><td>Heatmap image of transmitter locations</td></tr>
+  <tr><td>Loss</td><td>Approximate EMD (Wasserstein surrogate)</td></tr>
+  <tr><td>Input/Output Shape</td><td><code>(3, H, W)</code> → <code>(1, H, W)</code></td></tr>
+</table>
+
+<hr>
+
+<h2>📚 Citation</h2>
+<p>
+Mitchell, F., Baset, A., Patwari, N., Kasera, S. K., & Bhaskara, A. (2022).  
+<i>Deep Learning-based Localization in Limited Data Regimes.</i>  
+In Proceedings of WiseML '22.  
+<a href="https://doi.org/10.1145/3522783.3529529">https://doi.org/10.1145/3522783.3529529</a>
+</p>
+
+<hr>
+
+<h2>🏷️ License</h2>
+<p>MIT License (or your preferred open-source license)</p>
+
+<p><a href="index.html">← Back to main page</a></p>
+
 </body>
 </html>
