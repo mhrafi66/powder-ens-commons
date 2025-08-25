@@ -137,46 +137,142 @@ model, train_loss_arr, test_errors = load_model_and_fit_dataset(
 
 <hr>
 
-<h2>📐 Model Architecture</h2>
+<h2>⚠️ Model Architecture</h2>
+
+<p>
+  The <code>localization_unet_bspline</code> model is based on a U-Net-style encoder-decoder architecture with skip connections.
+  It is specifically designed for the wireless localization task using image-to-image regression.
+  This model accepts a <strong>3-channel input image</strong>, each channel encoding a distinct signal or environment-related modality:
+</p>
 
 <h3>🧠 Input Representation (3-Channel Image)</h3>
+
 <ol>
-  <li><strong>RSS Image:</strong> Grayscale image showing RSS intensity per receiver location.</li>
-  <li><strong>B-Spline Calibrated RSS:</strong> Calibrated grayscale image using shallow B-spline network.</li>
-  <li><strong>Terrain Feature Map:</strong> Tensor extracted from terrain/satellite image.</li>
+  <li>
+    <strong>Channel 1: RSS Image</strong>
+    <ul>
+      <li>A grayscale image where each receiver's location is illuminated based on the received signal strength (RSS).</li>
+      <li>The intensity of the pixel represents the raw RSS value received at that location.</li>
+    </ul>
+  </li>
+
+  <li>
+    <strong>Channel 2: B-Spline Calibrated RSS Image</strong>
+    <ul>
+      <li>The raw RSS values are passed through a shallow B-spline neural network that learns to calibrate signal distortions due to hardware/environmental variability.</li>
+      <li>A new grayscale image is generated from these calibrated values to form the second input channel.</li>
+    </ul>
+  </li>
+
+  <li>
+    <strong>Channel 3: Terrain-Aware Feature Map</strong>
+    <ul>
+      <li>This channel encodes geographical or environmental features from a satellite or terrain map.</li>
+      <li>A pretrained or manually crafted encoder extracts a tensor representation corresponding to each location.</li>
+    </ul>
+  </li>
 </ol>
 
+<p>
+  These three modalities are stacked together to form a 3-channel input tensor of shape:
+  <code>(3, H, W)</code>.
+</p>
+
+<hr>
 <h3>🧱 U-Net Backbone</h3>
+<p>The model follows a deep <strong>U-Net</strong> architecture, consisting of:</p>
+
 <ul>
-  <li><strong>Encoder:</strong> Convolution + ReLU + max-pooling → doubles channels at each step</li>
-  <li><strong>Decoder:</strong> Up-convolution + skip-connections → restores spatial resolution</li>
-  <li><strong>Residual connections:</strong> Used to maintain fine-grain detail</li>
+  <li>
+    <strong>Downsampling path (Encoder):</strong>
+    <ul>
+      <li>Applies multiple stages of <code>3×3</code> convolution + ReLU layers followed by <code>2×2</code> max-pooling to reduce spatial dimensions.</li>
+      <li>At each downsampling level, the number of feature channels doubles (e.g., <code>n → 2n → 4n → 8n → 16n</code>).</li>
+    </ul>
+  </li>
+
+  <li>
+    <strong>Upsampling path (Decoder):</strong>
+    <ul>
+      <li>Uses <code>2×2</code> up-convolution layers to restore spatial resolution, while concatenating corresponding encoder features via <strong>skip connections</strong>.</li>
+      <li>Channel sizes decrease accordingly (<code>16n → 8n → 4n → 2n → n</code>).</li>
+    </ul>
+  </li>
+
+  <li>
+    <strong>Residual Skip Connections:</strong>
+    <ul>
+      <li>High-resolution information from earlier encoder layers is passed directly to decoder layers to help refine localization outputs, particularly in preserving fine-grained RSS signals.</li>
+    </ul>
+  </li>
 </ul>
+
+<hr>
 
 <h3>🎯 Output</h3>
-<p>A single-channel heatmap image <code>(1, H, W)</code> representing transmitter likelihood over space.</p>
-
-<h3>⚙️ Loss</h3>
-<p>Uses <strong>approximate Earth Mover’s Distance (EMD)</strong> loss to preserve spatial coherence.</p>
-
-<hr>
-
-<h2>🔍 Observations</h2>
 <ul>
-  <li>Image-to-image regression worked better than coordinate prediction.</li>
-  <li>Model learned dense spatial patterns despite no explicit spatial bias in loss.</li>
+  <li>The final output is a <strong>single-channel image</strong> <code>(1, H, W)</code> that encodes a <strong>heatmap</strong> over the region of interest.</li>
+  <li>This heatmap represents the predicted transmitter location(s) using <strong>image-to-image regression</strong>.</li>
 </ul>
 
 <hr>
 
-<h2>📊 Summary</h2>
+<h3>🧪 Optimization Objective</h3>
+<ul>
+  <li>
+    The model uses an <strong>approximate-EMD (Earth Mover’s Distance)</strong> loss, which is particularly effective for spatial prediction tasks.
+  </li>
+  <li>
+    This loss penalizes pixel-wise deviations proportionally to their spatial displacement, allowing smoother and more realistic localization.
+  </li>
+</ul>
+
+<hr>
+
+<h3>🔍 Observations</h3>
+<ul>
+  <li>
+    Although both direct coordinate prediction and image-based regression were explored,
+    <strong>image-to-image prediction yielded the most accurate results</strong>.
+  </li>
+  <li>
+    Despite penalizing small and large spatial errors equally, the model learned robust localization patterns through dense gradient flow and terrain-aware representations.
+  </li>
+</ul>
+
+<hr>
+
+<h3>📊 Summary</h3>
+
 <table>
-  <tr><th>Component</th><th>Description</th></tr>
-  <tr><td>Input Channels</td><td>RSS, Calibrated RSS, Terrain tensor</td></tr>
-  <tr><td>Architecture</td><td>U-Net with skip connections</td></tr>
-  <tr><td>Output</td><td>Heatmap image of transmitter locations</td></tr>
-  <tr><td>Loss</td><td>Approximate EMD (Wasserstein surrogate)</td></tr>
-  <tr><td>Input/Output Shape</td><td><code>(3, H, W)</code> → <code>(1, H, W)</code></td></tr>
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input Channels</td>
+      <td>RSS image, Calibrated RSS via B-spline, Terrain tensor</td>
+    </tr>
+    <tr>
+      <td>Encoder-Decoder</td>
+      <td>U-Net with skip connections (downsample + upsample stages)</td>
+    </tr>
+    <tr>
+      <td>Output</td>
+      <td>Heatmap of likely transmitter locations</td>
+    </tr>
+    <tr>
+      <td>Loss</td>
+      <td>Approximate EMD (Wasserstein-1 surrogate)</td>
+    </tr>
+    <tr>
+      <td>Input Format</td>
+      <td>Image: <code>(3, H, W)</code> → Output: <code>(1, H, W)</code></td>
+    </tr>
+  </tbody>
 </table>
 
 <hr>
