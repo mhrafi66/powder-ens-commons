@@ -81,7 +81,11 @@
 <h3>Installation</h3>
 <pre><code>pip install powder_ens_commons</code></pre>
 
-<h3>Loading the Model in Google Colab and Fine Tuning</h3>
+<h3>🔍 Example Colab Notebook</h3> 
+<p>📓 See an Example use at: <a href="https://colab.research.google.com/drive/1-Fw4yqNb7YwwCJf_3GiLp5oAbz437v2W?usp=sharing" target="_blank">UNet-BSpline Localization Example (Colab)</a></p>
+
+
+<h3>Loading the Model and Fine Tuning</h3>
 <pre><code>from powder_ens_commons.modelcommons.localization_unet_bspline import load_model_and_fit_dataset
 
 # Load JSON dataset (ensure structure below)
@@ -146,9 +150,6 @@ images = sorted(os.listdir(img_folder))
 for name in images[:5]: # Show 5 images
   display(Image(filename=os.path.join(img_folder, name)))
 </code></pre>
-
-<h3>🔍 Example Colab Notebook</h3> 
-<p>📓 Try it live: <a href="https://colab.research.google.com/drive/1-Fw4yqNb7YwwCJf_3GiLp5oAbz437v2W?usp=sharing" target="_blank">UNet-BSpline Localization Example (Colab)</a></p>
 
 <hr>
 
