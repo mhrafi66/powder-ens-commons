@@ -81,7 +81,7 @@
 <h3>Installation</h3>
 <pre><code>pip install powder_ens_commons</code></pre>
 
-<h3>Example: Loading the Model in Google Colab</h3>
+<h3>Loading the Model in Google Colab and Fine Tuning</h3>
 <pre><code>from powder_ens_commons.modelcommons.localization_unet_bspline import load_model_and_fit_dataset
 
 # Load JSON dataset (ensure structure below)
@@ -100,41 +100,55 @@ model, train_loss_arr, test_errors = load_model_and_fit_dataset(
     device='cuda'  # Use 'cpu' if running without GPU
 )</code></pre>
 
-<h3>🔁 Use Pretrained Model + Fine-Tuning</h3> <pre><code>from powder_ens_commons.modelcommons.localization_unet_bspline.runner import load_model_and_fit_dataset
-
-model, train_loss_arr, test_errors = load_model_and_fit_dataset(
-train_data=test_data,
-receivers_list=receivers,
-bmap=bmap,
-dsm=dsm,
-one_tx=False, # True if single-TX data
-device='cuda' # or 'cpu'
-)</code></pre>
-
-<h3>🔁 Use Directly from Cached Pretrained Model</h3> <pre><code>from powder_ens_commons.modelcommons.localization_unet_bspline.runner import predict_with_unet_bspline_model
+<h3>🔁 Use Pretrained Model + Fine-Tuning</h3> 
+<pre><code>
+from powder_ens_commons.modelcommons.localization_unet_bspline.runner import predict_with_unet_bspline_model
 
 preds, truths, csv_path, img_folder = predict_with_unet_bspline_model(
-test_data=test_data,
-receivers_list=receivers,
-bmap=bmap,
-dsm=dsm,
-one_tx=False,
-use_cached_finetuned=True,
-device='cuda'
-)</code></pre>
+    test_data=test_data,
+    receivers_list=receivers,
+    bmap=bmap,
+    dsm=dsm,
+    one_tx=False,  # or True if your test data is only 1-TX
+    use_cached_finetuned=True,
+    device='cuda'
+)
+</code></pre>
+
+<h3>🔁 Use The Pretrained Model without Fine-tuning</h3> 
+<pre><code>
+from powder_ens_commons.modelcommons.localization_unet_bspline.runner import predict_with_unet_bspline_model
+
+preds, truths, csv_path, img_folder = predict_with_unet_bspline_model(
+    test_data=test_data,
+    receivers_list=receivers,
+    bmap=bmap,
+    dsm=dsm,
+    one_tx=False,  # or True if your test data is only 1-TX
+    use_cached_finetuned=False,
+    device='cuda'
+)
+</code></pre>
 
 <h3>📄 Access CSV Output</h3> 
-<pre><code>import pandas as pd df = pd.read_csv(csv_path) df.sample(5) # Print 5 random rows</code></pre> 
+<pre><code>
+import pandas as pd 
+df = pd.read_csv(csv_path) 
+df.head(5) # Print 5 rows
+</code></pre> 
   
 <h3>🖼️ View Predicted Output Images</h3> 
   
-<pre><code>from IPython.display import Image, display import os
+<pre><code>
+from IPython.display import Image, display import os
 
 images = sorted(os.listdir(img_folder))
 for name in images[:5]: # Show 5 images
-display(Image(filename=os.path.join(img_folder, name)))</code></pre>
+  display(Image(filename=os.path.join(img_folder, name)))
+</code></pre>
 
-<h3>🔍 Example Colab Notebook</h3> <p>📓 Try it live: <a href="https://colab.research.google.com/drive/1-Fw4yqNb7YwwCJf_3GiLp5oAbz437v2W?usp=sharing" target="_blank">UNet-BSpline Localization Example (Colab)</a></p>
+<h3>🔍 Example Colab Notebook</h3> 
+<p>📓 Try it live: <a href="https://colab.research.google.com/drive/1-Fw4yqNb7YwwCJf_3GiLp5oAbz437v2W?usp=sharing" target="_blank">UNet-BSpline Localization Example (Colab)</a></p>
 
 <hr>
 
